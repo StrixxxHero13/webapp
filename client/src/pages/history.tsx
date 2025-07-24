@@ -1,16 +1,25 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Wrench, ClipboardCheck, History as HistoryIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { CheckCircle, Wrench, ClipboardCheck, History as HistoryIcon, Eye, RotateCcw } from "lucide-react";
+import type { MaintenanceWithParts, Vehicle } from "@shared/schema";
 
 export default function History() {
-  const { data: maintenanceRecords, isLoading } = useQuery({
+  const [selectedVehicle, setSelectedVehicle] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [selectedRecord, setSelectedRecord] = useState<MaintenanceWithParts | null>(null);
+
+  const { data: maintenanceRecords, isLoading } = useQuery<MaintenanceWithParts[]>({
     queryKey: ["/api/maintenance"],
   });
 
-  const { data: vehicles } = useQuery({
+  const { data: vehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
   });
 
@@ -52,10 +61,25 @@ export default function History() {
     return vehicles?.find(v => v.id === vehicleId);
   };
 
-  // Sort records by completion date (most recent first)
-  const sortedRecords = maintenanceRecords?.sort((a, b) => 
+  // Filter and sort records
+  const filteredRecords = maintenanceRecords?.filter(record => {
+    if (selectedVehicle !== "all" && record.vehicleId !== parseInt(selectedVehicle)) return false;
+    if (selectedType !== "all" && record.type !== selectedType) return false;
+    if (startDate && new Date(record.completedAt) < new Date(startDate)) return false;
+    if (endDate && new Date(record.completedAt) > new Date(endDate)) return false;
+    return true;
+  }) || [];
+
+  const sortedRecords = filteredRecords.sort((a, b) => 
     new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
-  ) || [];
+  );
+
+  const handleResetFilters = () => {
+    setSelectedVehicle("all");
+    setSelectedType("all");
+    setStartDate("");
+    setEndDate("");
+  };
 
   return (
     <div className="p-6">
@@ -70,7 +94,7 @@ export default function History() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Véhicule</label>
-              <Select>
+              <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les véhicules" />
                 </SelectTrigger>
@@ -86,7 +110,7 @@ export default function History() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Type d'intervention</label>
-              <Select>
+              <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les types" />
                 </SelectTrigger>
@@ -101,15 +125,31 @@ export default function History() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date début</label>
-              <Input type="date" />
+              <Input 
+                type="date" 
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date fin</label>
-              <Input type="date" />
+              <Input 
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
-            <div className="flex items-end">
-              <Button className="w-full">
+            <div className="flex items-end space-x-2">
+              <Button className="flex-1">
                 Filtrer
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleResetFilters}
+                className="flex items-center space-x-1"
+              >
+                <RotateCcw className="h-4 w-4" />
+                <span>Réinitialiser</span>
               </Button>
             </div>
           </div>
@@ -168,14 +208,88 @@ export default function History() {
                                 <span>Technicien: {record.technician}</span>
                               </div>
                             </div>
-                            <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                              <time>
+                            <div className="text-right text-sm whitespace-nowrap">
+                              <time className="text-gray-500 block">
                                 {new Date(record.completedAt).toLocaleDateString('fr-FR', {
                                   day: '2-digit',
                                   month: '2-digit',
                                   year: 'numeric'
                                 })}
                               </time>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="mt-2"
+                                    onClick={() => setSelectedRecord(record)}
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Voir détails
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Détails de l'intervention</DialogTitle>
+                                  </DialogHeader>
+                                  {selectedRecord && (
+                                    <div className="space-y-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <h4 className="font-medium text-gray-900">Véhicule</h4>
+                                          <p className="text-sm text-gray-600">{vehicle?.plate || `Véhicule #${record.vehicleId}`}</p>
+                                          <p className="text-xs text-gray-500">{vehicle?.make} {vehicle?.model}</p>
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium text-gray-900">Type d'intervention</h4>
+                                          <p className="text-sm text-gray-600">{getMaintenanceTitle(selectedRecord.type)}</p>
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium text-gray-900">Date de réalisation</h4>
+                                          <p className="text-sm text-gray-600">
+                                            {new Date(selectedRecord.completedAt).toLocaleDateString('fr-FR', {
+                                              day: '2-digit',
+                                              month: 'long',
+                                              year: 'numeric'
+                                            })}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium text-gray-900">Technicien</h4>
+                                          <p className="text-sm text-gray-600">{selectedRecord.technician}</p>
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium text-gray-900">Durée</h4>
+                                          <p className="text-sm text-gray-600">
+                                            {Math.floor(selectedRecord.duration / 60)}h{String(selectedRecord.duration % 60).padStart(2, '0')}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium text-gray-900">Coût total</h4>
+                                          <p className="text-sm text-gray-600">{(selectedRecord.cost / 100).toFixed(2)}€</p>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                                        <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">{selectedRecord.description}</p>
+                                      </div>
+                                      {selectedRecord.partsUsed && selectedRecord.partsUsed.length > 0 && (
+                                        <div>
+                                          <h4 className="font-medium text-gray-900 mb-2">Pièces utilisées</h4>
+                                          <div className="space-y-2">
+                                            {selectedRecord.partsUsed.map((partUsage, idx) => (
+                                              <div key={idx} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                                <span className="text-sm">{partUsage.part.name}</span>
+                                                <span className="text-sm text-gray-600">Qté: {partUsage.quantity}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
                             </div>
                           </div>
                         </div>

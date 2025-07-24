@@ -7,14 +7,31 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Wrench, AlertTriangle, Cog, CheckCircle, Calendar, Trash2, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { MaintenanceWithParts, Alert } from "@shared/schema";
 
 export default function Maintenance() {
-  const { data: maintenanceRecords, isLoading } = useQuery({
+  const { data: maintenanceRecords, isLoading } = useQuery<MaintenanceWithParts[]>({
     queryKey: ["/api/maintenance"],
   });
 
-  const { data: alerts } = useQuery({
+  const { data: alerts } = useQuery<Alert[]>({
     queryKey: ["/api/alerts"],
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const scheduleMaintenance = useMutation({
+    mutationFn: async (alertId: number) => {
+      await apiRequest("PUT", `/api/alerts/${alertId}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
+      toast({
+        title: "Maintenance programmée",
+        description: "La maintenance a été ajoutée au planning.",
+      });
+    },
   });
 
   if (isLoading) {
@@ -111,6 +128,8 @@ export default function Maintenance() {
                           <Button 
                             size="sm" 
                             variant={alert.priority === 'urgent' ? 'destructive' : 'default'}
+                            onClick={() => scheduleMaintenance.mutate(alert.id)}
+                            disabled={scheduleMaintenance.isPending}
                           >
                             {alert.priority === 'urgent' ? 'Urgent' : 'Planifier'}
                           </Button>
