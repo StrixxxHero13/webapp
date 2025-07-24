@@ -97,7 +97,7 @@ export class DatabaseStorage implements IStorage {
         { vehicleId: insertedVehicles[2].id, type: "controle_technique", description: "Contrôle technique périodique", cost: 7800, duration: 60, technician: "Auto Control+", completedAt: new Date('2023-12-22'), nextDue: new Date('2024-12-22') },
       ];
 
-      await db.insert(maintenanceRecords).values(sampleMaintenance);
+      await db.insert(maintenanceRecords).values(sampleMaintenance as any);
 
       // Sample alerts
       const sampleAlerts = [
@@ -157,7 +157,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteVehicle(id: number): Promise<boolean> {
     const result = await db.delete(vehicles).where(eq(vehicles.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Parts methods
@@ -194,7 +194,7 @@ export class DatabaseStorage implements IStorage {
 
   async deletePart(id: number): Promise<boolean> {
     const result = await db.delete(parts).where(eq(parts.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Maintenance methods
@@ -232,7 +232,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMaintenanceRecord(record: InsertMaintenanceRecord): Promise<MaintenanceRecord> {
-    const [newRecord] = await db.insert(maintenanceRecords).values(record).returning();
+    const [newRecord] = await db.insert(maintenanceRecords).values(record as any).returning();
     return newRecord;
   }
 
@@ -247,7 +247,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMaintenanceRecord(id: number): Promise<boolean> {
     const result = await db.delete(maintenanceRecords).where(eq(maintenanceRecords.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Part usage methods
@@ -287,12 +287,12 @@ export class DatabaseStorage implements IStorage {
       .update(alerts)
       .set({ isRead: true })
       .where(eq(alerts.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async deleteAlert(id: number): Promise<boolean> {
     const result = await db.delete(alerts).where(eq(alerts.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Dashboard stats
