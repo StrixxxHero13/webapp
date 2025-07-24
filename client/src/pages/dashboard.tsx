@@ -15,20 +15,32 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
+interface DashboardStats {
+  totalVehicles: number;
+  operational: number;
+  maintenanceDue: number;
+  inRepair: number;
+  totalParts: number;
+  partsInStock: number;
+  partsLowStock: number;
+  partsOutOfStock: number;
+  unreadAlerts: number;
+}
+
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const { data: vehicles, isLoading: vehiclesLoading } = useQuery({
+  const { data: vehicles, isLoading: vehiclesLoading } = useQuery<any[]>({
     queryKey: ["/api/vehicles"],
   });
 
-  const { data: alerts, isLoading: alertsLoading } = useQuery({
+  const { data: alerts, isLoading: alertsLoading } = useQuery<any[]>({
     queryKey: ["/api/alerts"],
   });
 
-  const { data: maintenanceRecords, isLoading: maintenanceLoading } = useQuery({
+  const { data: maintenanceRecords, isLoading: maintenanceLoading } = useQuery<any[]>({
     queryKey: ["/api/maintenance"],
   });
 

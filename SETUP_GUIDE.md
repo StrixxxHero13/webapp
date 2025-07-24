@@ -6,7 +6,9 @@ This guide will help you set up the FleetManager vehicle management system on yo
 
 After following this guide, you'll have:
 - A complete vehicle management system running on your computer
-- A web interface to manage vehicles, parts, and maintenance
+- A modern web interface to manage vehicles, parts, and maintenance
+- Intelligent vehicle status validation system
+- Advanced search and filtering capabilities  
 - A chat assistant to help with fleet management
 - A local database with sample data to get started
 
@@ -222,11 +224,18 @@ The application includes:
 - Add new parts to inventory
 - Monitor part usage
 
+### Validation System
+- Intelligent vehicle status assessment
+- Task-list interface - validated vehicles disappear
+- Comprehensive status analysis based on maintenance history
+- Bulk validation operations
+
 ### Chat Assistant
 - Ask questions about your fleet
 - Get quick vehicle status updates
 - Check maintenance alerts
 - Inquire about parts inventory
+- Intelligent fallback responses
 
 ## Sample Data
 

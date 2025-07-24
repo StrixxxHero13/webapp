@@ -41,8 +41,9 @@ A comprehensive vehicle fleet management system built with React, Node.js, and P
 - Intelligent responses with fallback suggestions
 
 ### Advanced Search & Filtering
-- **Real-time Vehicle Search**: Live search with dropdown results
+- **Intelligent Vehicle Search**: Live search with navigation to relevant pages, detailed results, and clear visual cues
 - **Comprehensive History Filtering**: Filter by vehicle, maintenance type, and date ranges
+- **Task-List Validation**: Vehicles disappear from validation list once operational
 - **Reset Functionality**: Quick filter clearing
 
 ### Dashboard Overview
@@ -99,12 +100,13 @@ FleetManager/
 
 After setup, the application provides:
 
-1. **Dashboard** - Overview of your entire fleet
-2. **Vehicles** - Manage individual vehicles and their status
-3. **Maintenance** - Schedule and track maintenance activities
-4. **Parts** - Monitor inventory and stock levels
-5. **History** - Complete maintenance history and reporting
-6. **Chat** - Interactive assistant for quick queries
+1. **Dashboard** - Overview of your entire fleet with real-time statistics
+2. **Vehicles** - Manage individual vehicles and their status with detailed views
+3. **Maintenance** - Schedule and track maintenance activities with cost tracking
+4. **Parts** - Monitor inventory and stock levels with automated alerts
+5. **History** - Complete maintenance history with advanced filtering
+6. **Validation** - Dedicated vehicle status validation with task-list interface
+7. **Chat** - Interactive assistant for quick fleet management queries
 
 ## 📊 Sample Data
 

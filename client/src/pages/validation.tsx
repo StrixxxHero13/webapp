@@ -69,7 +69,7 @@ export default function Validation() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       
       const vehicle = vehicles?.find(v => v.id === data.vehicleId);
-      const result = data.result as ValidationResult;
+      const result = data.result as unknown as ValidationResult;
       const statusText = result.status === 'operational' ? 'opérationnel' : 
                         result.status === 'maintenance_due' ? 'maintenance requise' : 'en réparation';
       
