@@ -1,10 +1,10 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const vehicles = sqliteTable("vehicles", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const vehicles = pgTable("vehicles", {
+  id: serial("id").primaryKey(),
   plate: text("plate").notNull().unique(),
   model: text("model").notNull(),
   make: text("make").notNull(),
@@ -12,47 +12,47 @@ export const vehicles = sqliteTable("vehicles", {
   type: text("type").notNull(), // "utilitaire", "camion", "voiture"
   mileage: integer("mileage").notNull().default(0),
   status: text("status").notNull().default("operational"), // "operational", "maintenance_due", "in_repair"
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const parts = sqliteTable("parts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const parts = pgTable("parts", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   reference: text("reference").notNull().unique(),
   category: text("category").notNull(), // "filtres", "freinage", "moteur", "pneumatiques"
   stock: integer("stock").notNull().default(0),
   minStock: integer("min_stock").notNull().default(5),
   unitPrice: integer("unit_price").notNull(), // in cents
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const maintenanceRecords = sqliteTable("maintenance_records", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const maintenanceRecords = pgTable("maintenance_records", {
+  id: serial("id").primaryKey(),
   vehicleId: integer("vehicle_id").references(() => vehicles.id).notNull(),
   type: text("type").notNull(), // "vidange", "controle_technique", "revision", "reparation"
   description: text("description").notNull(),
   cost: integer("cost").notNull(), // in cents
   duration: integer("duration").notNull(), // in minutes
   technician: text("technician").notNull(),
-  completedAt: integer("completed_at", { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  nextDue: integer("next_due", { mode: 'timestamp' }),
+  completedAt: timestamp("completed_at").defaultNow(),
+  nextDue: timestamp("next_due"),
 });
 
-export const partUsage = sqliteTable("part_usage", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const partUsage = pgTable("part_usage", {
+  id: serial("id").primaryKey(),
   maintenanceId: integer("maintenance_id").references(() => maintenanceRecords.id).notNull(),
   partId: integer("part_id").references(() => parts.id).notNull(),
   quantity: integer("quantity").notNull().default(1),
 });
 
-export const alerts = sqliteTable("alerts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const alerts = pgTable("alerts", {
+  id: serial("id").primaryKey(),
   vehicleId: integer("vehicle_id").references(() => vehicles.id).notNull(),
   type: text("type").notNull(), // "maintenance_due", "overdue", "inspection_needed"
   message: text("message").notNull(),
   priority: text("priority").notNull().default("medium"), // "low", "medium", "high", "urgent"
-  isRead: integer("is_read", { mode: 'boolean' }).notNull().default(false),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Insert schemas
