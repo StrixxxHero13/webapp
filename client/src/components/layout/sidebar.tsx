@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Truck, BarChart3, Car, Wrench, Cog, History, MessageCircle } from "lucide-react";
+import { Truck, BarChart3, Car, Wrench, Cog, History, Shield, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -8,6 +8,7 @@ const navigation = [
   { name: "Maintenance", href: "/maintenance", icon: Wrench },
   { name: "Pièces détachées", href: "/parts", icon: Cog },
   { name: "Historique", href: "/history", icon: History },
+  { name: "Validation", href: "/validation", icon: Shield },
   { name: "Assistant Chat", href: "/chat", icon: MessageCircle },
 ];
 

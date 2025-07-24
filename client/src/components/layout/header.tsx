@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Search, Bell, User, X, Shield, CheckCircle, AlertTriangle, Wrench } from "lucide-react";
+import { Search, Bell, X, User, Car, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Vehicle, Alert } from "@shared/schema";
@@ -16,12 +16,13 @@ const pageTitles = {
   "/maintenance": "Planning de maintenance",
   "/parts": "Inventaire des pièces détachées",
   "/history": "Historique des interventions",
+  "/validation": "Validation des véhicules",
   "/chat": "Assistant FleetManager",
 };
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -57,27 +58,7 @@ export default function Header() {
     },
   });
 
-  const validateAllVehicles = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/vehicles/validate-all");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
-      toast({
-        title: "Validation terminée",
-        description: "Tous les véhicules ont été validés et leurs statuts mis à jour.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de valider les véhicules.",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const currentTitle = pageTitles[location as keyof typeof pageTitles] || "FleetManager";
 
@@ -97,75 +78,6 @@ export default function Header() {
           <h2 className="text-2xl font-semibold text-gray-900">{currentTitle}</h2>
         </div>
         <div className="flex items-center space-x-4">
-          {/* Vehicle Status Validation */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="space-x-2">
-                <Shield className="h-4 w-4" />
-                <span>Validation</span>
-                {stats && (
-                  <Badge variant="secondary" className="ml-1">
-                    {stats.operational}/{stats.totalVehicles}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Statut des véhicules</h4>
-                
-                {stats && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">Opérationnels</span>
-                      </div>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {stats.operational}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                        <span className="text-sm">Maintenance due</span>
-                      </div>
-                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                        {stats.maintenanceDue}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Wrench className="h-4 w-4 text-red-600" />
-                        <span className="text-sm">En réparation</span>
-                      </div>
-                      <Badge variant="outline" className="bg-red-50 text-red-700">
-                        {stats.inRepair}
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="border-t pt-3">
-                  <Button 
-                    onClick={() => validateAllVehicles.mutate()}
-                    disabled={validateAllVehicles.isPending}
-                    className="w-full"
-                    size="sm"
-                  >
-                    <Shield className="h-4 w-4 mr-2" />
-                    {validateAllVehicles.isPending ? "Validation..." : "Valider tous les véhicules"}
-                  </Button>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Met à jour automatiquement le statut des véhicules selon leur historique de maintenance et alertes.
-                  </p>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-
           {/* Search */}
           <Popover>
             <PopoverTrigger asChild>
@@ -173,44 +85,134 @@ export default function Header() {
                 <Search className="absolute inset-y-0 left-0 ml-3 h-4 w-4 text-gray-400 top-1/2 transform -translate-y-1/2" />
                 <Input
                   type="text"
-                  placeholder="Rechercher un véhicule..."
-                  className="w-64 pl-10"
+                  placeholder="Rechercher véhicules par plaque, marque, modèle..."
+                  className="w-80 pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </PopoverTrigger>
-            {searchQuery && filteredVehicles.length > 0 && (
-              <PopoverContent className="w-80 p-0" align="start">
-                <div className="max-h-60 overflow-y-auto">
-                  {filteredVehicles.slice(0, 5).map((vehicle) => (
-                    <div
-                      key={vehicle.id}
-                      className="flex items-center space-x-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                      onClick={() => setSearchQuery("")}
-                    >
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">{vehicle.plate.slice(0, 2)}</span>
+            {searchQuery && (
+              <PopoverContent className="w-96 p-0" align="start">
+                <div className="max-h-80 overflow-y-auto">
+                  {/* Search Header */}
+                  <div className="p-3 bg-gray-50 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Search className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">
+                          Résultats de recherche ({filteredVehicles.length})
+                        </span>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{vehicle.plate}</p>
-                        <p className="text-xs text-gray-500">{vehicle.make} {vehicle.model} ({vehicle.year})</p>
-                        <Badge 
-                          variant={vehicle.status === 'operational' ? 'default' : 
-                                 vehicle.status === 'maintenance_due' ? 'secondary' : 'destructive'}
-                          className="text-xs mt-1"
+                      {filteredVehicles.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            navigate('/vehicles');
+                            setSearchQuery("");
+                          }}
+                          className="text-xs h-6 px-2"
                         >
-                          {vehicle.status === 'operational' ? 'Opérationnel' :
-                           vehicle.status === 'maintenance_due' ? 'Maintenance due' : 'En réparation'}
-                        </Badge>
-                      </div>
+                          Voir tous
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </Button>
+                      )}
                     </div>
-                  ))}
-                  {filteredVehicles.length > 5 && (
-                    <div className="p-3 text-center text-sm text-gray-500 border-t">
-                      et {filteredVehicles.length - 5} autres véhicules...
+                  </div>
+
+                  {/* Search Results */}
+                  {filteredVehicles.length > 0 ? (
+                    <div>
+                      {filteredVehicles.slice(0, 6).map((vehicle) => (
+                        <div
+                          key={vehicle.id}
+                          className="flex items-center space-x-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
+                          onClick={() => {
+                            navigate('/vehicles');
+                            setSearchQuery("");
+                          }}
+                        >
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Car className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{vehicle.plate}</p>
+                                <p className="text-xs text-gray-500">{vehicle.make} {vehicle.model} ({vehicle.year})</p>
+                              </div>
+                              <Badge 
+                                variant={vehicle.status === 'operational' ? 'default' : 
+                                       vehicle.status === 'maintenance_due' ? 'secondary' : 'destructive'}
+                                className="text-xs"
+                              >
+                                {vehicle.status === 'operational' ? 'Opérationnel' :
+                                 vehicle.status === 'maintenance_due' ? 'Maintenance due' : 'En réparation'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center mt-1 text-xs text-gray-500">
+                              <span>Kilométrage: {vehicle.mileage.toLocaleString()} km</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {filteredVehicles.length > 6 && (
+                        <div 
+                          className="p-3 text-center text-sm text-gray-600 border-t bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                          onClick={() => {
+                            navigate('/vehicles');
+                            setSearchQuery("");
+                          }}
+                        >
+                          <div className="flex items-center justify-center space-x-2">
+                            <span>Voir {filteredVehicles.length - 6} autres véhicules</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Search className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 mb-1">Aucun véhicule trouvé</p>
+                      <p className="text-xs text-gray-500">
+                        Essayez de rechercher par plaque d'immatriculation, marque ou modèle
+                      </p>
                     </div>
                   )}
+
+                  {/* Search Actions */}
+                  <div className="p-3 bg-gray-50 border-t">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigate('/vehicles');
+                          setSearchQuery("");
+                        }}
+                        className="text-xs"
+                      >
+                        <Car className="h-3 w-3 mr-1" />
+                        Tous les véhicules
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigate('/maintenance');
+                          setSearchQuery("");
+                        }}
+                        className="text-xs"
+                      >
+                        <Search className="h-3 w-3 mr-1" />
+                        Maintenance
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </PopoverContent>
             )}

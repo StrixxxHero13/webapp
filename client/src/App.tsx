@@ -9,6 +9,7 @@ import Vehicles from "@/pages/vehicles";
 import Maintenance from "@/pages/maintenance";
 import Parts from "@/pages/parts";
 import History from "@/pages/history";
+import Validation from "@/pages/validation";
 import Chat from "@/pages/chat";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
@@ -26,6 +27,7 @@ function Router() {
             <Route path="/maintenance" component={Maintenance} />
             <Route path="/parts" component={Parts} />
             <Route path="/history" component={History} />
+            <Route path="/validation" component={Validation} />
             <Route path="/chat" component={Chat} />
             <Route component={NotFound} />
           </Switch>

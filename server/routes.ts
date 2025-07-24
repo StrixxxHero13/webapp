@@ -254,6 +254,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/vehicles/:id/validate", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validation = await storage.validateVehicleStatus(id);
+      res.json(validation);
+    } catch (error) {
+      console.error("Error validating vehicle:", error);
+      res.status(500).json({ error: "Failed to validate vehicle" });
+    }
+  });
+
   app.post("/api/vehicles/validate-all", async (req, res) => {
     try {
       await storage.validateAllVehiclesStatus();
