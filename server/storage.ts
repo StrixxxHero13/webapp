@@ -167,7 +167,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteVehicle(id: number): Promise<boolean> {
     const result = await db.delete(vehicles).where(eq(vehicles.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return result.changes > 0;
   }
 
   // Parts methods
@@ -204,7 +204,7 @@ export class DatabaseStorage implements IStorage {
 
   async deletePart(id: number): Promise<boolean> {
     const result = await db.delete(parts).where(eq(parts.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return result.changes > 0;
   }
 
   // Maintenance methods
@@ -257,7 +257,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMaintenanceRecord(id: number): Promise<boolean> {
     const result = await db.delete(maintenanceRecords).where(eq(maintenanceRecords.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return result.changes > 0;
   }
 
   // Part usage methods
@@ -297,12 +297,12 @@ export class DatabaseStorage implements IStorage {
       .update(alerts)
       .set({ isRead: true })
       .where(eq(alerts.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return result.changes > 0;
   }
 
   async deleteAlert(id: number): Promise<boolean> {
     const result = await db.delete(alerts).where(eq(alerts.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return result.changes > 0;
   }
 
   // Vehicle Status Validation
