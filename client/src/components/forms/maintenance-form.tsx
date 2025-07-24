@@ -35,7 +35,7 @@ export function MaintenanceForm({ maintenance, onSuccess }: MaintenanceFormProps
       description: maintenance.description,
       cost: maintenance.cost,
     } : {
-      vehicleId: 0,
+      vehicleId: undefined,
       type: "vidange",
       description: "",
       cost: 0,
@@ -169,7 +169,7 @@ export function MaintenanceForm({ maintenance, onSuccess }: MaintenanceFormProps
                       step="0.01"
                       placeholder="0.00"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)}
                     />
                   </FormControl>
                   <FormMessage />

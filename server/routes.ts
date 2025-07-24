@@ -171,11 +171,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/maintenance", async (req, res) => {
     try {
+      console.log("Received maintenance data:", req.body);
       const maintenanceData = insertMaintenanceRecordSchema.parse(req.body);
+      console.log("Parsed maintenance data:", maintenanceData);
       const record = await storage.createMaintenanceRecord(maintenanceData);
       res.status(201).json(record);
     } catch (error) {
-      res.status(400).json({ message: "Invalid maintenance data" });
+      console.error("Maintenance creation error:", error);
+      res.status(400).json({ message: "Invalid maintenance data", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

@@ -69,11 +69,11 @@ export const insertPartSchema = createInsertSchema(parts).omit({
 export const insertMaintenanceRecordSchema = createInsertSchema(maintenanceRecords).omit({
   id: true,
   completedAt: true,
-  duration: true,
-  technician: true,
   nextDue: true,
 }).extend({
   cost: z.number().min(0).default(0),
+  duration: z.number().min(1).default(60), // default to 60 minutes
+  technician: z.string().min(1).default("Technicien système"), // default technician
 });
 
 export const insertPartUsageSchema = createInsertSchema(partUsage).omit({
