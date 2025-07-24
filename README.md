@@ -1,14 +1,16 @@
 # FleetManager - Vehicle Management System
 
-A comprehensive vehicle fleet management system built with React, Node.js, and PostgreSQL. This application helps manage vehicle fleets, track maintenance schedules, monitor parts inventory, and provides automated alerts for preventive maintenance.
+A comprehensive vehicle fleet management system built with React, Node.js, and PostgreSQL. This application helps manage vehicle fleets, track maintenance schedules, monitor parts inventory, provides automated alerts for preventive maintenance, and includes intelligent vehicle status validation.
 
 ## 🚗 Features
 
 ### Vehicle Management
 - Track all vehicles in your fleet
+- **Intelligent Status Validation**: Automatic assessment of vehicle operational status
 - Monitor vehicle status (operational, maintenance due, in repair)
 - Store detailed vehicle information (plate, model, make, year, mileage)
-- Real-time status updates
+- Real-time status updates based on maintenance history and alerts
+- Comprehensive vehicle details with maintenance statistics
 
 ### Maintenance Scheduling
 - Schedule and track maintenance activities
@@ -36,6 +38,12 @@ A comprehensive vehicle fleet management system built with React, Node.js, and P
 - Check maintenance schedules
 - Query parts inventory
 - Quick fleet statistics
+- Intelligent responses with fallback suggestions
+
+### Advanced Search & Filtering
+- **Real-time Vehicle Search**: Live search with dropdown results
+- **Comprehensive History Filtering**: Filter by vehicle, maintenance type, and date ranges
+- **Reset Functionality**: Quick filter clearing
 
 ### Dashboard Overview
 - Fleet statistics at a glance

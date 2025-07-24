@@ -239,6 +239,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Vehicle Status Validation routes
+  app.get("/api/vehicles/:id/validate", async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.id);
+      const validation = await storage.validateVehicleStatus(vehicleId);
+      res.json(validation);
+    } catch (error) {
+      console.error("Error validating vehicle status:", error);
+      res.status(500).json({ error: "Failed to validate vehicle status" });
+    }
+  });
+
+  app.post("/api/vehicles/validate-all", async (req, res) => {
+    try {
+      await storage.validateAllVehiclesStatus();
+      res.json({ message: "All vehicles validated successfully" });
+    } catch (error) {
+      console.error("Error validating all vehicles:", error);
+      res.status(500).json({ error: "Failed to validate all vehicles" });
+    }
+  });
+
+  // Dashboard routes
+  app.get("/api/dashboard/stats", async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
   // Chat routes
   app.post("/api/chat/query", async (req, res) => {
     try {

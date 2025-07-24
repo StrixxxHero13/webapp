@@ -45,6 +45,16 @@ export interface IStorage {
   markAlertAsRead(id: number): Promise<boolean>;
   deleteAlert(id: number): Promise<boolean>;
 
+  // Vehicle Status Validation
+  validateVehicleStatus(vehicleId: number): Promise<{
+    status: "operational" | "maintenance_due" | "in_repair";
+    reasons: string[];
+    lastInspection?: Date;
+    nextMaintenanceDue?: Date;
+    urgentIssues: string[];
+  }>;
+  validateAllVehiclesStatus(): Promise<void>;
+
   // Dashboard stats
   getDashboardStats(): Promise<{
     totalVehicles: number;
@@ -293,6 +303,139 @@ export class DatabaseStorage implements IStorage {
   async deleteAlert(id: number): Promise<boolean> {
     const result = await db.delete(alerts).where(eq(alerts.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Vehicle Status Validation
+  async validateVehicleStatus(vehicleId: number) {
+    const vehicle = await this.getVehicle(vehicleId);
+    if (!vehicle) {
+      throw new Error("Vehicle not found");
+    }
+
+    const vehicleAlerts = await this.getAlertsByVehicle(vehicleId);
+    const maintenanceHistory = await this.getMaintenanceRecordsByVehicle(vehicleId);
+    
+    let status: "operational" | "maintenance_due" | "in_repair" = "operational";
+    let reasons: string[] = [];
+    let urgentIssues: string[] = [];
+    let lastInspection: Date | undefined;
+    let nextMaintenanceDue: Date | undefined;
+
+    // Check for urgent/unread alerts
+    const urgentAlerts = vehicleAlerts.filter(alert => 
+      !alert.isRead && (alert.priority === "urgent" || alert.priority === "high")
+    );
+
+    if (urgentAlerts.length > 0) {
+      urgentIssues = urgentAlerts.map(alert => alert.message);
+    }
+
+    // Check if vehicle is currently in repair (recent maintenance activity)
+    const recentMaintenance = maintenanceHistory
+      .filter(record => record.completedAt)
+      .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())[0];
+
+    if (recentMaintenance) {
+      lastInspection = new Date(recentMaintenance.completedAt!);
+      
+      // If maintenance was very recent (within 24 hours), might still be in repair
+      const daysSinceLastMaintenance = (Date.now() - lastInspection.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (daysSinceLastMaintenance < 1 && recentMaintenance.type === "reparation") {
+        status = "in_repair";
+        reasons.push("Réparation récente en cours");
+      }
+    }
+
+    // Check for overdue maintenance based on mileage and time
+    const lastMajorMaintenance = maintenanceHistory
+      .filter(record => ["vidange", "revision", "controle_technique"].includes(record.type))
+      .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())[0];
+
+    if (lastMajorMaintenance) {
+      const daysSinceLastMajor = lastMajorMaintenance.completedAt 
+        ? (Date.now() - new Date(lastMajorMaintenance.completedAt).getTime()) / (1000 * 60 * 60 * 24)
+        : 365; // Default to old if no date
+
+      // Check for different maintenance intervals
+      if (lastMajorMaintenance.type === "vidange" && daysSinceLastMajor > 180) {
+        status = "maintenance_due";
+        reasons.push("Vidange due (+ de 6 mois)");
+        const nextDue = new Date(lastMajorMaintenance.completedAt!);
+        nextDue.setDate(nextDue.getDate() + 180);
+        nextMaintenanceDue = nextDue;
+      }
+
+      if (lastMajorMaintenance.type === "controle_technique" && daysSinceLastMajor > 365) {
+        status = "maintenance_due";
+        reasons.push("Contrôle technique expiré");
+        urgentIssues.push("Contrôle technique obligatoire expiré");
+      }
+
+      if (lastMajorMaintenance.type === "revision" && daysSinceLastMajor > 365) {
+        status = "maintenance_due";
+        reasons.push("Révision annuelle due");
+      }
+    } else {
+      // No maintenance history - requires immediate attention
+      status = "maintenance_due";
+      reasons.push("Aucun historique de maintenance");
+      urgentIssues.push("Véhicule sans historique de maintenance");
+    }
+
+    // Check mileage-based maintenance
+    const highMileageThreshold = 200000; // 200k km
+    const mediumMileageThreshold = 100000; // 100k km
+
+    if (vehicle.mileage > highMileageThreshold) {
+      reasons.push("Kilométrage élevé (+ 200k km)");
+      if (status === "operational") {
+        status = "maintenance_due";
+      }
+    } else if (vehicle.mileage > mediumMileageThreshold) {
+      reasons.push("Kilométrage modéré (+ 100k km)");
+    }
+
+    // Override with urgent issues
+    if (urgentIssues.length > 0 && status === "operational") {
+      status = "maintenance_due";
+    }
+
+    // If no issues found, ensure reasons reflect good status
+    if (status === "operational" && reasons.length === 0) {
+      reasons.push("Toutes les vérifications sont conformes");
+    }
+
+    return {
+      status,
+      reasons,
+      lastInspection,
+      nextMaintenanceDue,
+      urgentIssues
+    };
+  }
+
+  async validateAllVehiclesStatus() {
+    const allVehicles = await this.getVehicles();
+    
+    for (const vehicle of allVehicles) {
+      const validation = await this.validateVehicleStatus(vehicle.id);
+      
+      // Update vehicle status if it has changed
+      if (vehicle.status !== validation.status) {
+        await this.updateVehicle(vehicle.id, { status: validation.status });
+        
+        // Create alert if status degraded
+        if (validation.status !== "operational") {
+          await this.createAlert({
+            vehicleId: vehicle.id,
+            type: validation.status === "in_repair" ? "repair_needed" : "maintenance_due",
+            message: `Statut véhicule ${vehicle.plate}: ${validation.reasons.join(", ")}`,
+            priority: validation.urgentIssues.length > 0 ? "urgent" : "medium"
+          });
+        }
+      }
+    }
   }
 
   // Dashboard stats

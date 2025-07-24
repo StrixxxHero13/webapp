@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Bell, User, X } from "lucide-react";
+import { Search, Bell, User, X, Shield, CheckCircle, AlertTriangle, Wrench } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Vehicle, Alert } from "@shared/schema";
 
 const pageTitles = {
@@ -22,8 +23,19 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [location] = useLocation();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<{
+    totalVehicles: number;
+    operational: number;
+    maintenanceDue: number;
+    inRepair: number;
+    totalParts: number;
+    partsInStock: number;
+    partsLowStock: number;
+    partsOutOfStock: number;
+    unreadAlerts: number;
+  }>({
     queryKey: ["/api/dashboard/stats"],
   });
 
@@ -45,6 +57,28 @@ export default function Header() {
     },
   });
 
+  const validateAllVehicles = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/vehicles/validate-all");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
+      toast({
+        title: "Validation terminée",
+        description: "Tous les véhicules ont été validés et leurs statuts mis à jour.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de valider les véhicules.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const currentTitle = pageTitles[location as keyof typeof pageTitles] || "FleetManager";
 
   // Search filter
@@ -63,6 +97,75 @@ export default function Header() {
           <h2 className="text-2xl font-semibold text-gray-900">{currentTitle}</h2>
         </div>
         <div className="flex items-center space-x-4">
+          {/* Vehicle Status Validation */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="space-x-2">
+                <Shield className="h-4 w-4" />
+                <span>Validation</span>
+                {stats && (
+                  <Badge variant="secondary" className="ml-1">
+                    {stats.operational}/{stats.totalVehicles}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900">Statut des véhicules</h4>
+                
+                {stats && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">Opérationnels</span>
+                      </div>
+                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                        {stats.operational}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <span className="text-sm">Maintenance due</span>
+                      </div>
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                        {stats.maintenanceDue}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Wrench className="h-4 w-4 text-red-600" />
+                        <span className="text-sm">En réparation</span>
+                      </div>
+                      <Badge variant="outline" className="bg-red-50 text-red-700">
+                        {stats.inRepair}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="border-t pt-3">
+                  <Button 
+                    onClick={() => validateAllVehicles.mutate()}
+                    disabled={validateAllVehicles.isPending}
+                    className="w-full"
+                    size="sm"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    {validateAllVehicles.isPending ? "Validation..." : "Valider tous les véhicules"}
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Met à jour automatiquement le statut des véhicules selon leur historique de maintenance et alertes.
+                  </p>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {/* Search */}
           <Popover>
             <PopoverTrigger asChild>
@@ -158,12 +261,12 @@ export default function Header() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900">{alert.message}</p>
                               <p className="text-xs text-gray-500 mt-1">
-                                {new Date(alert.createdAt).toLocaleDateString('fr-FR', {
+                                {alert.createdAt ? new Date(alert.createdAt).toLocaleDateString('fr-FR', {
                                   day: '2-digit',
                                   month: '2-digit',
                                   hour: '2-digit',
                                   minute: '2-digit'
-                                })}
+                                }) : 'Date inconnue'}
                               </p>
                               <Badge 
                                 variant={alert.priority === 'urgent' ? 'destructive' : 
