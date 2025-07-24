@@ -1,0 +1,79 @@
+Contexte du projet :
+
+Vous êtes chargé de créer un site web pour un projet de gestion de véhicules (car management). Ce site vise à centraliser et gérer toutes les informations liées à l'entretien, aux réparations et à la maintenance préventive d'une flotte de véhicules. L'objectif est d'assurer un suivi précis, une traçabilité complète et une gestion efficace pour chaque véhicule, tout en automatisant certaines tâches pour optimiser le travail des utilisateurs (gestionnaires de flotte, mécaniciens, etc.).
+Objectifs du projet :
+
+Suivi centralisé des entretiens et réparations : Consigner et suivre toutes les interventions (entretiens, réparations) réalisées sur chaque véhicule.
+Alerte automatique pour la maintenance préventive : Générer des notifications automatiques pour signaler les échéances de maintenance (ex. : vidanges, contrôles techniques).
+Gestion des pièces détachées utilisées : Gérer l'inventaire des pièces détachées utilisées lors des interventions et suivre leur affectation par véhicule.
+Traçabilité complète pour chaque véhicule : Assurer un dossier complet pour chaque véhicule, incluant toutes les interventions, pièces utilisées et alertes.
+Historique des interventions accessible par véhicule : Permettre aux utilisateurs de consulter facilement l'historique des interventions pour chaque véhicule.
+
+Rôle du chatbot :
+
+Le chatbot sera intégré au site web pour assister les utilisateurs dans leurs tâches quotidiennes de gestion des véhicules. Il devra :
+
+Faciliter l'accès aux informations sur les véhicules.
+Automatiser certaines actions comme la programmation de rappels ou la gestion des alertes.
+Répondre aux requêtes spécifiques des utilisateurs de manière intuitive et rapide.
+
+Fonctionnalités détaillées attendues du chatbot :
+
+Collecte d'informations sur les véhicules :
+    Permettre aux utilisateurs de fournir des informations sur un véhicule (ex. : immatriculation, modèle, kilométrage) via une interaction conversationnelle.
+    Exemple de requête : "Ajoute le kilométrage actuel du véhicule ABC-123 : 150 000 km."
+    Réponse attendue : "Kilométrage mis à jour pour le véhicule ABC-123 : 150 000 km."
+Programmation de rappels pour la maintenance :
+    Permettre la création de rappels pour les échéances de maintenance préventive.
+    Exemple de requête : "Programme un rappel pour la vidange du véhicule XYZ-789 dans 3 mois."
+    Réponse attendue : "Rappel programmé pour la vidange du véhicule XYZ-789 le [date]."
+Fourniture d'informations sur les pièces détachées :
+    Informer sur l'état du stock des pièces détachées ou sur les pièces utilisées pour une intervention spécifique.
+    Exemple de requête : "Quelles pièces ont été utilisées pour la dernière réparation du véhicule DEF-456 ?"
+    Réponse attendue : "Pour la dernière réparation du véhicule DEF-456, les pièces utilisées sont : [filtre à huile, plaquettes de frein]."
+Accès à l'historique des interventions :
+    Donner accès à l'historique complet des interventions pour un véhicule donné.
+    Exemple de requête : "Montre-moi l'historique des entretiens du véhicule GHI-012."
+    Réponse attendue : "Historique pour GHI-012 : [entretien le 12/03/2023 : vidange ; réparation le 15/06/2023 : remplacement pneus]."
+Gestion des alertes de maintenance :
+    Notifier les utilisateurs des échéances de maintenance à venir ou en retard.
+    Exemple de requête : "Quels véhicules ont besoin d'une maintenance dans les 30 prochains jours ?"
+    Réponse attendue : "Les véhicules suivants nécessitent une maintenance d'ici 30 jours : [JKL-345 : vidange ; MNO-678 : contrôle technique]."
+    Le chatbot peut aussi envoyer des alertes automatiques : "Attention, le véhicule STU-234 a besoin d’un contrôle technique dans 15 jours."
+
+Intégration technique au site web :
+
+Widget de chat : Le chatbot sera accessible via un widget intégré sur toutes les pages du site web.
+Connexion à une base de données : Il doit être lié à une base de données contenant les informations sur les véhicules, interventions et pièces détachées, via une API pour des mises à jour en temps réel.
+Automatisation : Des scripts devront être mis en place pour envoyer automatiquement des alertes de maintenance via le chatbot (ex. : notifications push ou messages proactifs).
+
+Capacités techniques requises :
+
+Traitement du langage naturel (NLP) : Le chatbot doit comprendre des requêtes variées et naturelles (ex. : "Quand est la prochaine vidange ?" ou "Dis-moi quand entretenir ABC-123").
+Contexte conversationnel : Il doit conserver le contexte (ex. : savoir de quel véhicule on parle dans une série de questions).
+Guidance interactive : Il doit pouvoir guider l’utilisateur dans des processus complexes, comme enregistrer une nouvelle intervention ou mettre à jour le stock.
+
+Exemples de scénarios d’utilisation :
+
+Consultation d’historique :
+    Utilisateur : "Quel est l’historique des réparations pour JKL-345 ?"
+    Chatbot : "Voici l’historique pour JKL-345 : [réparation le 10/01/2023 : changement batterie ; entretien le 05/07/2023 : vidange]."
+Programmation d’un rappel :
+    Utilisateur : "Ajoute un rappel pour le contrôle technique de MNO-678 dans 2 mois."
+    Chatbot : "Rappel ajouté pour le contrôle technique de MNO-678 le [date]."
+Gestion des pièces :
+    Utilisateur : "Quelles pièces restent en stock pour les freins ?"
+    Chatbot : "Il reste [3 paires de plaquettes de frein] en stock."
+Alerte proactive :
+    Chatbot (automatique) : "Le véhicule PQR-901 a une vidange prévue dans 7 jours."
+
+Contraintes et considérations :
+
+Sécurité : Limiter l’accès aux données sensibles selon les droits des utilisateurs (ex. : seuls les gestionnaires peuvent modifier des rappels).
+Performance : Réponses rapides et gestion de multiples utilisateurs simultanés.
+Disponibilité : Le chatbot doit être opérationnel 24/7.
+
+Instructions pour le développement :
+Utilisez une plateforme supportant le NLP et les API (ex. : Dialogflow, Rasa, Microsoft Bot Framework).
+Prévoyez une évolutivité pour ajouter de nouvelles fonctionnalités (ex. : rapports statistiques).
+Testez avec des scénarios réels pour garantir une expérience utilisateur fluide et intuitive.   Utilise des bases de données locales pour pouvoir lancer le projet localement sans connexion  et le "AI" dans le projet n'a pas besoin d'etre du vrai AI , fait juste en sorte qu'on ai des donnée selectionnable qui servira comme d'un racourci pour voir tel ou tel chose sur un vehicule
