@@ -406,6 +406,21 @@ export class DatabaseStorage implements IStorage {
       reasons.push("Toutes les vérifications sont conformes");
     }
 
+    // Update vehicle status in database if it has changed
+    if (vehicle.status !== status) {
+      await db.update(vehicles).set({ status }).where(eq(vehicles.id, vehicleId));
+      
+      // Create alert if status degraded
+      if (status !== "operational") {
+        await this.createAlert({
+          vehicleId: vehicleId,
+          type: status === "in_repair" ? "repair_needed" : "maintenance_due",
+          message: `Statut véhicule ${vehicle.plate}: ${reasons.join(", ")}`,
+          priority: urgentIssues.length > 0 ? "urgent" : "medium"
+        });
+      }
+    }
+
     return {
       status,
       reasons,
