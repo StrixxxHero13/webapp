@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertMaintenanceRecordSchema, type InsertMaintenanceRecord, type MaintenanceRecord } from "@shared/schema";
+import { insertMaintenanceRecordSchema, type InsertMaintenanceRecord, type MaintenanceRecord, type Vehicle } from "@shared/schema";
 import { Plus, Edit } from "lucide-react";
 
 interface MaintenanceFormProps {
@@ -23,7 +23,7 @@ export function MaintenanceForm({ maintenance, onSuccess }: MaintenanceFormProps
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: vehicles } = useQuery({
+  const { data: vehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
   });
 
@@ -45,15 +45,9 @@ export function MaintenanceForm({ maintenance, onSuccess }: MaintenanceFormProps
   const mutation = useMutation({
     mutationFn: async (data: InsertMaintenanceRecord) => {
       if (maintenance) {
-        return apiRequest(`/api/maintenance/${maintenance.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(data),
-        });
+        return apiRequest("PATCH", `/api/maintenance/${maintenance.id}`, data);
       } else {
-        return apiRequest("/api/maintenance", {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
+        return apiRequest("POST", "/api/maintenance", data);
       }
     },
     onSuccess: () => {
@@ -107,7 +101,7 @@ export function MaintenanceForm({ maintenance, onSuccess }: MaintenanceFormProps
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {(vehicles || []).map((vehicle: any) => (
+                      {(vehicles || []).map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
                           {vehicle.plate} - {vehicle.make} {vehicle.model}
                         </SelectItem>

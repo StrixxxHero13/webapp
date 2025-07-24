@@ -118,7 +118,7 @@ export default function Maintenance() {
                           <h5 className="font-medium text-gray-900">Véhicule</h5>
                           <p className="text-sm text-gray-600">{alert.message}</p>
                           <p className="text-xs text-gray-500">
-                            {new Date(alert.createdAt).toLocaleDateString('fr-FR')}
+                            {alert.createdAt ? new Date(alert.createdAt).toLocaleDateString('fr-FR') : 'Date inconnue'}
                           </p>
                         </div>
                       </div>
@@ -185,7 +185,7 @@ export default function Maintenance() {
                   <span className="text-sm text-gray-600">Maintenances ce mois:</span>
                   <span className="text-sm font-medium text-gray-900">
                     {maintenanceRecords?.filter(record => {
-                      const recordDate = new Date(record.completedAt);
+                      const recordDate = record.completedAt ? new Date(record.completedAt) : new Date();
                       const currentDate = new Date();
                       return recordDate.getMonth() === currentDate.getMonth() &&
                              recordDate.getFullYear() === currentDate.getFullYear();
