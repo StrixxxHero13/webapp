@@ -48,9 +48,10 @@ Preferred communication style: Simple, everyday language.
 - **History**: Complete maintenance history with filtering capabilities
 
 ### Chat Integration
-- **Chat Widget**: Floating chat interface for user assistance
+- **Chat Page**: Integrated chat interface as a main navigation page
 - **API Integration**: Connected to backend for real-time fleet data queries
 - **Quick Actions**: Predefined actions for common fleet management tasks
+- **Interactive Assistant**: Full-page chat interface with message history
 
 ## Data Flow
 

@@ -11,6 +11,7 @@ const pageTitles = {
   "/maintenance": "Planning de maintenance",
   "/parts": "Inventaire des pièces détachées",
   "/history": "Historique des interventions",
+  "/chat": "Assistant FleetManager",
 };
 
 export default function Header() {

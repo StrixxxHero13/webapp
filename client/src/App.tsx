@@ -9,9 +9,9 @@ import Vehicles from "@/pages/vehicles";
 import Maintenance from "@/pages/maintenance";
 import Parts from "@/pages/parts";
 import History from "@/pages/history";
+import Chat from "@/pages/chat";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import ChatWidget from "@/components/chat/chat-widget";
 
 function Router() {
   return (
@@ -26,11 +26,11 @@ function Router() {
             <Route path="/maintenance" component={Maintenance} />
             <Route path="/parts" component={Parts} />
             <Route path="/history" component={History} />
+            <Route path="/chat" component={Chat} />
             <Route component={NotFound} />
           </Switch>
         </main>
       </div>
-      <ChatWidget />
     </div>
   );
 }
