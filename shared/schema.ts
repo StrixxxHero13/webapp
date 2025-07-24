@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -105,3 +106,39 @@ export type MaintenanceWithParts = MaintenanceRecord & {
 export type PartWithStatus = Part & {
   status: "in_stock" | "low_stock" | "out_of_stock";
 };
+
+// Relations
+export const vehiclesRelations = relations(vehicles, ({ many }) => ({
+  maintenanceRecords: many(maintenanceRecords),
+  alerts: many(alerts),
+}));
+
+export const maintenanceRecordsRelations = relations(maintenanceRecords, ({ one, many }) => ({
+  vehicle: one(vehicles, {
+    fields: [maintenanceRecords.vehicleId],
+    references: [vehicles.id],
+  }),
+  partUsages: many(partUsage),
+}));
+
+export const partUsageRelations = relations(partUsage, ({ one }) => ({
+  maintenanceRecord: one(maintenanceRecords, {
+    fields: [partUsage.maintenanceId],
+    references: [maintenanceRecords.id],
+  }),
+  part: one(parts, {
+    fields: [partUsage.partId],
+    references: [parts.id],
+  }),
+}));
+
+export const partsRelations = relations(parts, ({ many }) => ({
+  partUsages: many(partUsage),
+}));
+
+export const alertsRelations = relations(alerts, ({ one }) => ({
+  vehicle: one(vehicles, {
+    fields: [alerts.vehicleId],
+    references: [vehicles.id],
+  }),
+}));
