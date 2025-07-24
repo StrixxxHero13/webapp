@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Bell, X, User, Car, ExternalLink } from "lucide-react";
+import { Search, Bell, X, Car, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -302,16 +302,7 @@ export default function Header() {
             </PopoverContent>
           </Popover>
           
-          {/* User Profile */}
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <User className="text-white text-sm" />
-            </div>
-            <div className="hidden md:block">
-              <div className="text-sm font-medium text-gray-900">Pierre Martin</div>
-              <div className="text-xs text-gray-500">Gestionnaire de flotte</div>
-            </div>
-          </div>
+
         </div>
       </div>
     </header>
