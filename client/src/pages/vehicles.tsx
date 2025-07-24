@@ -1,14 +1,44 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, Truck, Plus, Edit } from "lucide-react";
+import { VehicleForm } from "@/components/forms/vehicle-form";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Car, Truck, Plus, Edit, Trash2, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function Vehicles() {
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["/api/vehicles"],
+  });
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/vehicles/${id}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Véhicule supprimé",
+        description: "Le véhicule a été supprimé avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le véhicule.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -54,10 +84,7 @@ export default function Vehicles() {
           <h3 className="text-lg font-semibold text-gray-900">Gestion des véhicules</h3>
           <p className="text-sm text-gray-600">Gérez votre flotte de véhicules</p>
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Ajouter un véhicule</span>
-        </Button>
+        <VehicleForm />
       </div>
 
       {/* Filters */}
@@ -157,9 +184,24 @@ export default function Vehicles() {
                   <Button className="flex-1">
                     Voir détails
                   </Button>
-                  <Button variant="outline" size="icon">
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <VehicleForm vehicle={vehicle} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        className="text-red-600"
+                        onClick={() => deleteMutation.mutate(vehicle.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardContent>
             </Card>

@@ -1,8 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Wrench, AlertTriangle, Cog, CheckCircle, Calendar } from "lucide-react";
+import { MaintenanceForm } from "@/components/forms/maintenance-form";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Plus, Wrench, AlertTriangle, Cog, CheckCircle, Calendar, Trash2, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function Maintenance() {
   const { data: maintenanceRecords, isLoading } = useQuery({
@@ -59,10 +63,7 @@ export default function Maintenance() {
           <h3 className="text-lg font-semibold text-gray-900">Planning de maintenance</h3>
           <p className="text-sm text-gray-600">Planifiez et suivez les maintenances</p>
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Programmer une maintenance</span>
-        </Button>
+        <MaintenanceForm />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

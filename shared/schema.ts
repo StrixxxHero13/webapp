@@ -69,6 +69,11 @@ export const insertPartSchema = createInsertSchema(parts).omit({
 export const insertMaintenanceRecordSchema = createInsertSchema(maintenanceRecords).omit({
   id: true,
   completedAt: true,
+  duration: true,
+  technician: true,
+  nextDue: true,
+}).extend({
+  cost: z.number().min(0).default(0),
 });
 
 export const insertPartUsageSchema = createInsertSchema(partUsage).omit({

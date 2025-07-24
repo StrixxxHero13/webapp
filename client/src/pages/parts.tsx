@@ -1,14 +1,44 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Package, CheckCircle, AlertTriangle, XCircle, Edit, MoreVertical, Cog } from "lucide-react";
+import { PartForm } from "@/components/forms/part-form";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Plus, Package, CheckCircle, AlertTriangle, XCircle, Edit, MoreVertical, Cog, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function Parts() {
   const { data: parts, isLoading } = useQuery({
     queryKey: ["/api/parts"],
+  });
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/parts/${id}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/parts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Pièce supprimée",
+        description: "La pièce a été supprimée avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la pièce.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -69,10 +99,7 @@ export default function Parts() {
           <h3 className="text-lg font-semibold text-gray-900">Inventaire des pièces détachées</h3>
           <p className="text-sm text-gray-600">Gérez votre stock de pièces détachées</p>
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Ajouter une pièce</span>
-        </Button>
+        <PartForm />
       </div>
 
       {/* Inventory Overview */}
@@ -220,12 +247,24 @@ export default function Parts() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            {part.status === "out_of_stock" ? "Commander" : "Modifier"}
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
+                          <PartForm part={part} />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => deleteMutation.mutate(part.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </tr>

@@ -61,6 +61,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/vehicles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const vehicleData = insertVehicleSchema.partial().parse(req.body);
+      const vehicle = await storage.updateVehicle(id, vehicleData);
+      if (!vehicle) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+      res.json(vehicle);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid vehicle data" });
+    }
+  });
+
   app.delete("/api/vehicles/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -108,6 +122,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/parts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const partData = insertPartSchema.partial().parse(req.body);
+      const part = await storage.updatePart(id, partData);
+      if (!part) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      res.json(part);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid part data" });
+    }
+  });
+
+  app.delete("/api/parts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deletePart(id);
+      if (!success) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete part" });
+    }
+  });
+
   // Maintenance routes
   app.get("/api/maintenance", async (req, res) => {
     try {
@@ -135,6 +176,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(record);
     } catch (error) {
       res.status(400).json({ message: "Invalid maintenance data" });
+    }
+  });
+
+  app.patch("/api/maintenance/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const maintenanceData = insertMaintenanceRecordSchema.partial().parse(req.body);
+      const record = await storage.updateMaintenanceRecord(id, maintenanceData);
+      if (!record) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      res.json(record);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid maintenance data" });
+    }
+  });
+
+  app.delete("/api/maintenance/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMaintenanceRecord(id);
+      if (!success) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete maintenance record" });
     }
   });
 
