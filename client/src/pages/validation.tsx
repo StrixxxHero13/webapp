@@ -60,14 +60,27 @@ export default function Validation() {
   // Validate individual vehicle
   const validateVehicle = useMutation({
     mutationFn: async (vehicleId: number) => {
-      return apiRequest("POST", `/api/vehicles/${vehicleId}/validate`);
+      const result = await apiRequest("POST", `/api/vehicles/${vehicleId}/validate`);
+      return { vehicleId, result };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      const vehicle = vehicles?.find(v => v.id === data.vehicleId);
+      const statusText = data.result.status === 'operational' ? 'opérationnel' : 
+                        data.result.status === 'maintenance_due' ? 'maintenance requise' : 'en réparation';
+      
       toast({
         title: "Validation terminée",
-        description: "Le statut du véhicule a été mis à jour.",
+        description: `${vehicle?.plate} est maintenant: ${statusText}. ${data.result.reasons?.[0] || ''}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur de validation",
+        description: "Impossible de valider le véhicule. Veuillez réessayer.",
+        variant: "destructive",
       });
     },
   });
@@ -75,14 +88,27 @@ export default function Validation() {
   // Validate all vehicles
   const validateAllVehicles = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/vehicles/validate-all");
+      const beforeStats = stats;
+      const result = await apiRequest("POST", "/api/vehicles/validate-all");
+      return { beforeStats, result };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      setTimeout(() => {
+        // Show updated stats after a brief delay to let queries refresh
+        toast({
+          title: "Validation globale terminée",
+          description: `${vehicleValidations.length} véhicules ont été analysés et leurs statuts mis à jour.`,
+        });
+      }, 1000);
+    },
+    onError: () => {
       toast({
-        title: "Validation globale terminée",
-        description: "Tous les statuts de véhicules ont été mis à jour.",
+        title: "Erreur de validation",
+        description: "Impossible de valider tous les véhicules. Veuillez réessayer.",
+        variant: "destructive",
       });
     },
   });
@@ -334,14 +360,14 @@ export default function Validation() {
               {/* Actions */}
               <div className="flex space-x-2 pt-2">
                 <Button
-                  variant="outline"
+                  variant={vehicle.status === 'operational' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => validateVehicle.mutate(vehicle.id)}
                   disabled={validateVehicle.isPending}
                   className="flex-1"
                 >
                   <RefreshCw className={`h-4 w-4 mr-1 ${validateVehicle.isPending ? 'animate-spin' : ''}`} />
-                  Valider
+                  {vehicle.status === 'operational' ? 'Re-valider' : 'Valider'}
                 </Button>
                 <Button
                   variant="ghost"
@@ -370,43 +396,78 @@ export default function Validation() {
         </Card>
       )}
 
-      {/* Validation Info */}
-      <Card>
+      {/* How Validation Works */}
+      <Card className="bg-blue-50 border-blue-200">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 text-blue-800">
             <TrendingUp className="h-5 w-5" />
-            <span>À propos de la validation</span>
+            <span>Comment fonctionne la validation</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="bg-white p-4 rounded-lg border border-blue-200">
+            <h4 className="font-medium text-blue-900 mb-3">La validation analyse automatiquement :</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <span className="text-gray-700">Historique de maintenance (vidanges, révisions)</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-4 w-4 text-blue-600" />
+                  <span className="text-gray-700">Alertes non lues et leur priorité</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Gauge className="h-4 w-4 text-blue-600" />
+                  <span className="text-gray-700">Kilométrage et seuils de maintenance</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <span className="text-gray-700">Dates de contrôle technique</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Wrench className="h-4 w-4 text-blue-600" />
+                  <span className="text-gray-700">Réparations récentes en cours</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Activity className="h-4 w-4 text-blue-600" />
+                  <span className="text-gray-700">État général du véhicule</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="space-y-2">
-              <h4 className="font-medium text-green-600">Critères - Opérationnel</h4>
-              <ul className="text-gray-600 space-y-1">
-                <li>• Maintenance à jour</li>
-                <li>• Aucune alerte urgente</li>
-                <li>• Contrôle technique valide</li>
-                <li>• Kilométrage acceptable</li>
-              </ul>
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <div className="flex items-center space-x-2 mb-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <h4 className="font-medium text-green-800">Opérationnel</h4>
+              </div>
+              <p className="text-green-700 text-xs">Le véhicule peut circuler sans restrictions</p>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-yellow-600">Critères - Maintenance due</h4>
-              <ul className="text-gray-600 space-y-1">
-                <li>• Vidange en retard (+6 mois)</li>
-                <li>• Révision annuelle due</li>
-                <li>• Kilométrage élevé (+200k km)</li>
-                <li>• Alertes de maintenance</li>
-              </ul>
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <h4 className="font-medium text-yellow-800">Maintenance due</h4>
+              </div>
+              <p className="text-yellow-700 text-xs">Maintenance nécessaire mais véhicule utilisable</p>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-red-600">Critères - En réparation</h4>
-              <ul className="text-gray-600 space-y-1">
-                <li>• Réparation récente en cours</li>
-                <li>• Panne signalée</li>
-                <li>• Immobilisation technique</li>
-                <li>• Contrôle technique échoué</li>
-              </ul>
+            <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+              <div className="flex items-center space-x-2 mb-2">
+                <Wrench className="h-4 w-4 text-red-600" />
+                <h4 className="font-medium text-red-800">En réparation</h4>
+              </div>
+              <p className="text-red-700 text-xs">Véhicule immobilisé, réparation en cours</p>
             </div>
+          </div>
+          
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+            <p className="text-amber-800 text-sm">
+              <strong>Important:</strong> La validation met à jour le statut selon l'état réel du véhicule. 
+              Un véhicule peut rester en "maintenance due" s'il a vraiment besoin d'intervention.
+            </p>
           </div>
         </CardContent>
       </Card>
