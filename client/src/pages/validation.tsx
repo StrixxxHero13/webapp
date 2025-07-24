@@ -39,7 +39,8 @@ interface VehicleValidation extends Vehicle {
 
 export default function Validation() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("needs-validation");
+  const [showAllVehicles, setShowAllVehicles] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleValidation | null>(null);
   
   const { toast } = useToast();
@@ -68,12 +69,13 @@ export default function Validation() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       
       const vehicle = vehicles?.find(v => v.id === data.vehicleId);
-      const statusText = data.result.status === 'operational' ? 'opérationnel' : 
-                        data.result.status === 'maintenance_due' ? 'maintenance requise' : 'en réparation';
+      const result = data.result as ValidationResult;
+      const statusText = result.status === 'operational' ? 'opérationnel' : 
+                        result.status === 'maintenance_due' ? 'maintenance requise' : 'en réparation';
       
       toast({
         title: "Validation terminée",
-        description: `${vehicle?.plate} est maintenant: ${statusText}. ${data.result.reasons?.[0] || ''}`,
+        description: `${vehicle?.plate} est maintenant: ${statusText}. ${result.reasons?.[0] || ''}`,
       });
     },
     onError: () => {
@@ -127,13 +129,22 @@ export default function Validation() {
     };
   });
 
-  // Filter vehicles
+  // Filter vehicles - by default only show vehicles that need validation
   const filteredVehicles = vehicleValidations.filter(vehicle => {
     const matchesSearch = vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vehicle.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vehicle.model.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || vehicle.status === statusFilter;
+    let matchesStatus = true;
+    
+    if (statusFilter === "needs-validation") {
+      // Only show vehicles that need attention (not operational)
+      matchesStatus = vehicle.status !== "operational";
+    } else if (statusFilter === "all") {
+      matchesStatus = true;
+    } else {
+      matchesStatus = vehicle.status === statusFilter;
+    }
     
     return matchesSearch && matchesStatus;
   });
@@ -181,10 +192,21 @@ export default function Validation() {
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Validation des véhicules</h3>
           <p className="text-sm text-gray-600">
-            Vérifiez et validez le statut opérationnel de tous vos véhicules
+            {statusFilter === "needs-validation" 
+              ? `${filteredVehicles.length} véhicule(s) nécessitent une validation`
+              : "Vérifiez et validez le statut opérationnel de tous vos véhicules"
+            }
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            onClick={() => setStatusFilter(statusFilter === "needs-validation" ? "all" : "needs-validation")}
+            className="flex items-center space-x-2"
+          >
+            <Eye className="h-4 w-4" />
+            <span>{statusFilter === "needs-validation" ? "Voir tous" : "À valider seulement"}</span>
+          </Button>
           <Button
             onClick={() => validateAllVehicles.mutate()}
             disabled={validateAllVehicles.isPending}
@@ -290,6 +312,7 @@ export default function Validation() {
                   <SelectValue placeholder="Filtrer par statut" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="needs-validation">À valider</SelectItem>
                   <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="operational">Opérationnel</SelectItem>
                   <SelectItem value="maintenance_due">Maintenance due</SelectItem>
@@ -387,11 +410,31 @@ export default function Validation() {
       {filteredVehicles.length === 0 && !vehiclesLoading && (
         <Card>
           <CardContent className="p-8 text-center">
-            <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun véhicule trouvé</h3>
-            <p className="text-gray-600">
-              Ajustez vos filtres de recherche pour voir plus de résultats.
-            </p>
+            {statusFilter === "needs-validation" ? (
+              <>
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Excellent travail !</h3>
+                <p className="text-gray-600 mb-4">
+                  Tous les véhicules sont validés et opérationnels.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setStatusFilter("all")}
+                  className="flex items-center space-x-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>Voir tous les véhicules</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun véhicule trouvé</h3>
+                <p className="text-gray-600">
+                  Ajustez vos filtres de recherche pour voir plus de résultats.
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
